@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Приглашение в кино 🍿</title>
+<style>
+:root{--bg:#fdf3ee;--card:#ffffff;--text:#2a1620;--muted:#7a5a66;--accent:#d6335a;--accent2:#f5a524;--field:#ffe9e1;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#140b12;--card:#231520;--text:#fbeff3;--muted:#c3a1b0;--accent:#ff4d79;--accent2:#ffc24a;--field:#2d1a28}}
+:root[data-theme="dark"]{--bg:#140b12;--card:#231520;--text:#fbeff3;--muted:#c3a1b0;--accent:#ff4d79;--accent2:#ffc24a;--field:#2d1a28}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--text);font-family:Georgia,"Times New Roman",serif;padding:16px;overflow-x:hidden}
+.card{width:100%;max-width:420px;background:var(--card);border-radius:24px;padding:28px 22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.18);border:2px dashed var(--accent)}
+.screen{display:none}.screen.on{display:block}
+h1{font-size:30px;margin:8px 0 10px;line-height:1.2}
+p{color:var(--muted);font-size:17px;line-height:1.5;margin:8px 0 18px}
+.big{font-size:64px}
+button{font:inherit;font-size:18px;border:0;border-radius:999px;padding:14px 28px;background:var(--accent);color:#fff;cursor:pointer;margin:6px;transition:transform .15s}
+button:active{transform:scale(.95)}
+button.alt{background:var(--field);color:var(--text)}
+canvas{width:100%;background:var(--field);border-radius:16px;touch-action:none;display:block}
+.hud{display:flex;justify-content:space-between;font-size:18px;margin-bottom:10px}
+.movie{font-size:28px;color:var(--accent);font-style:italic;margin:6px 0}
+.ticket{border:2px solid var(--accent2);border-radius:16px;padding:14px;margin:16px 0}
+.pad{text-align:center;margin-top:8px}.pad button{width:56px;height:48px;padding:0;margin:3px}
+.q{font-size:17px;margin:16px 0 6px;text-align:left}input{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:14px;border:2px solid var(--field);background:var(--field);color:var(--text);margin-top:6px}input:focus{outline:none;border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chips span{padding:9px 14px;border-radius:999px;background:var(--field);cursor:pointer;font-size:15px;border:2px solid transparent}.chips span.on{border-color:var(--accent);background:var(--accent);color:#fff}
+a.btn{display:inline-block;font-size:18px;border-radius:999px;padding:14px 28px;background:var(--accent);color:#fff;text-decoration:none;margin:6px}
+.btns{position:relative;height:150px}
+#no{position:absolute}
+</style>
+</head>
+<body>
+<div class="card">
+
+<div class="screen on" id="s1">
+  <div class="big">🎟️</div>
+  <h1>Для тебя есть сюрприз</h1>
+  <p>Чтобы узнать, какой фильм я хочу посмотреть вместе с тобой, пройди мини-игру: помоги мишке выбраться из <b>3 лабиринтов</b> и добраться до кино 🎬</p>
+  <button id="start">Играть 🧸</button>
+</div>
+
+<div class="screen" id="s2">
+  <div class="hud"><span>Уровень <b id="lv">1</b>/3</span><span>🧸 → 🎬</span></div>
+  <canvas id="cv" width="360" height="360"></canvas>
+  <div class="pad">
+    <button data-d="0,-1">▲</button>
+    <div><button data-d="-1,0">◀</button><button data-d="0,1">▼</button><button data-d="1,0">▶</button></div>
+  </div>
+  <p style="font-size:14px;margin:6px 0 0">Води пальцем по лабиринту, жми стрелки или клавиши ← ↑ ↓ →</p>
+</div>
+
+<div class="screen" id="s4">
+  <div class="big">🎬</div>
+  <h1>Ты справилась! 🎉</h1>
+  <p>Я приглашаю тебя на кино: <b id="when"></b>. Ответь на несколько вопросов:</p>
+  <div class="q">Какой фильм хочешь посмотреть?</div>
+  <input id="film" placeholder="Название фильма" maxlength="80">
+  <div class="q">Что хочешь есть под фильм?</div>
+  <input id="food" placeholder="Попкорн, пицца, суши…" maxlength="80">
+  <div class="q">Как тебе нравится смотреть кино?</div>
+  <div class="chips" id="how">
+    <span>Под пледом на диване 🛋️</span><span>В кровати 🛏️</span><span>На полу с подушками 🧸</span>
+  </div>
+  <input id="how-in" placeholder="Или напиши своё" maxlength="80">
+  <div class="q">Хочешь смотреть кино со мной?</div>
+  <div class="chips" id="with"><span>Да 💖</span><span>Очень да 😍</span><span>Пока не знаю 🤔</span></div>
+  <div id="err" style="color:var(--accent);min-height:22px;font-size:15px"></div>
+  <button id="send">Готово 💌</button>
+</div>
+
+<div class="screen" id="s5">
+  <div class="big">💌</div>
+  <h1>Остался последний шаг</h1>
+  <p>Отправь мне свой ответ:</p>
+  <div class="ticket" id="out" style="text-align:left;color:var(--text);white-space:pre-line;font-size:16px"></div>
+  <a class="btn" id="mail" target="_blank" rel="noopener">Отправить на почту 💌</a>
+  <button class="alt" id="share">Отправить в мессенджер</button>
+  <button class="alt" id="copy">Скопировать</button>
+  <div id="note" style="color:var(--muted);font-size:14px;min-height:20px;margin-top:6px"></div>
+</div>
+
+</div>
+
+<script>
+// ✏️ Поменяй здесь фильм и время:
+var WHEN = "суббота, 22:00";
+
+document.getElementById("when").textContent = WHEN;
+function show(id){document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("on")});document.getElementById(id).classList.add("on")}
+
+var cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+var N=[5,7,9],lvl,g,S,px,py,cell;
+function gen(n){
+  var s=2*n+1,m=[],y,x;
+  for(y=0;y<s;y++)m.push(new Array(s).fill(1));
+  m[1][1]=0;var st=[[1,1]];
+  while(st.length){
+    var c=st[st.length-1],nb=[];
+    [[2,0],[-2,0],[0,2],[0,-2]].forEach(function(d){
+      var nx=c[0]+d[0],ny=c[1]+d[1];
+      if(nx>0&&ny>0&&nx<s-1&&ny<s-1&&m[ny][nx])nb.push([nx,ny,c[0]+d[0]/2,c[1]+d[1]/2]);
+    });
+    if(!nb.length){st.pop();continue}
+    var r=nb[Math.floor(Math.random()*nb.length)];
+    m[r[3]][r[2]]=0;m[r[1]][r[0]]=0;st.push([r[0],r[1]]);
+  }
+  return m;
+}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function draw(){
+  var wall=css("--accent"),path=css("--field");
+  ctx.clearRect(0,0,360,360);
+  for(var y=0;y<S;y++)for(var x=0;x<S;x++){
+    ctx.fillStyle=g[y][x]?wall:path;
+    ctx.fillRect(x*cell,y*cell,cell+0.5,cell+0.5);
+  }
+  ctx.font=Math.floor(cell*0.85)+"px serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillText("🎬",(S-1.5)*cell,(S-1.5)*cell+2);
+  ctx.fillText("🧸",(px+0.5)*cell,(py+0.5)*cell+2);
+}
+function level(i){
+  lvl=i;g=gen(N[i]);S=g.length;cell=360/S;px=1;py=1;
+  document.getElementById("lv").textContent=i+1;draw();
+}
+function start(){show("s2");level(0)}
+function step(dx,dy){
+  var nx=px+dx,ny=py+dy;
+  if(nx<0||ny<0||nx>=S||ny>=S||g[ny][nx])return;
+  px=nx;py=ny;draw();
+  if(px===S-2&&py===S-2){
+    if(lvl<2){setTimeout(function(){level(lvl+1)},250)}
+    else setTimeout(function(){show("s4")},250);
+  }
+}
+var K={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+document.addEventListener("keydown",function(e){
+  if(K[e.key]&&document.getElementById("s2").classList.contains("on")){e.preventDefault();step(K[e.key][0],K[e.key][1])}
+});
+document.querySelectorAll(".pad button").forEach(function(b){
+  b.addEventListener("click",function(){var d=b.dataset.d.split(",");step(+d[0],+d[1])});
+});
+var sx,sy,drag=false;
+cv.addEventListener("pointerdown",function(e){drag=true;sx=e.clientX;sy=e.clientY});
+cv.addEventListener("pointermove",function(e){
+  if(!drag)return;
+  var dx=e.clientX-sx,dy=e.clientY-sy,t=cv.getBoundingClientRect().width/S*0.8;
+  if(Math.abs(dx)<t&&Math.abs(dy)<t)return;
+  if(Math.abs(dx)>Math.abs(dy))step(dx>0?1:-1,0);else step(0,dy>0?1:-1);
+  sx=e.clientX;sy=e.clientY;
+});
+window.addEventListener("pointerup",function(){drag=false});
+
+document.getElementById("start").onclick=start;
+var $=function(i){return document.getElementById(i)};
+function chips(id,cb){
+  var box=$(id);
+  box.querySelectorAll("span").forEach(function(c){
+    c.onclick=function(){
+      box.querySelectorAll("span").forEach(function(x){x.classList.remove("on")});
+      c.classList.add("on");if(cb)cb(c.textContent);
+    };
+  });
+}
+chips("how",function(t){$("how-in").value=t});
+chips("with");
+$("how-in").addEventListener("input",function(){$("how").querySelectorAll("span").forEach(function(x){x.classList.remove("on")})});
+var msg="";
+$("send").onclick=function(){
+  var f=$("film").value.trim(),d=$("food").value.trim(),h=$("how-in").value.trim(),w=$("with").querySelector(".on");
+  if(!f||!d||!h||!w){$("err").textContent="Заполни все пункты, пожалуйста 🙏";return}
+  $("err").textContent="";
+  msg="Я прошла все лабиринты! 🧸🎬\n\n🎞 Фильм: "+f+"\n🍿 Хочу есть: "+d+"\n🛋 Смотреть люблю: "+h+"\n💖 Смотреть с тобой: "+w.textContent+"\n\n📅 Кино: "+WHEN;
+  $("out").textContent=msg;
+  $("mail").href="mailto:lev.rafaelyan@gmail.com?subject="+encodeURIComponent("Ответ на приглашение в кино 🎬")+"&body="+encodeURIComponent(msg);
+  show("s5");
+};
+$("share").onclick=function(){
+  if(navigator.share){navigator.share({text:msg}).catch(function(){})}
+  else{window.open("https://t.me/share/url?url=%20&text="+encodeURIComponent(msg),"_blank")}
+};
+$("copy").onclick=function(){
+  try{navigator.clipboard.writeText(msg).then(function(){$("note").textContent="Скопировано ✅ Вставь в чат"},function(){$("note").textContent="Выдели текст и скопируй вручную"})}
+  catch(e){$("note").textContent="Выдели текст и скопируй вручную"}
+};
+</script>
+</body>
+</html>
